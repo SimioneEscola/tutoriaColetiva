@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FE 1 — Ficha de Evolução da Tutoria Coletiva</title>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBRI2hr_NjYexleBE1clh_xLI9sBUSha5g",
+    authDomain: "fe2-tutoria.firebaseapp.com",
+    databaseURL: "https://fe2-tutoria-default-rtdb.firebaseio.com",
+    projectId: "fe2-tutoria",
+    storageBucket: "fe2-tutoria.firebasestorage.app",
+    messagingSenderId: "916340863680",
+    appId: "1:916340863680:web:ebfe4f8d14bac8bba13325"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window._fbSet = (path, data) => set(ref(db, path), data);
+  window._fbGet = (path) => get(ref(db, path));
+  window._fbReady = true;
+
+  if (window._fbQueue) { window._fbQueue.forEach(fn => fn()); window._fbQueue = []; }
+  window.dispatchEvent(new Event("fbready"));
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --az:#1565C0;--azm:#1976D2;--azc:#E3F2FD;--azb:#90CAF9;
+  --azd:#0D47A1;--gz:#f7f7f7;--bd:#e0e0e0;--tx:#212121;--mt:#757575;
+  --adm:#4A148C;--adm2:#7B1FA2;--admc:#F3E5F5;--admb:#CE93D8;
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:#eceff1;color:var(--tx);min-height:100vh;padding-bottom:48px;}
+
+/* ── LOADING ── */
+#loading-overlay{position:fixed;inset:0;background:rgba(13,71,161,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;}
+.loading-spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{color:#fff;font-size:14px;font-weight:500;}
+
+/* ── LOGIN ── */
+#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0D47A1,#1976D2);padding:24px;}
+.login-card{background:#fff;border-radius:18px;padding:48px 44px 40px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo h1{font-size:21px;font-weight:800;color:var(--azd);letter-spacing:-.5px;line-height:1.2;}
+.login-logo p{font-size:12px;color:var(--mt);margin-top:4px;}
+.login-badge{display:inline-block;background:var(--azc);color:var(--azm);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:8px;}
+.login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.login-field label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--azm);}
+.login-field select,.login-field input{font-size:14px;padding:12px 14px;border:1.5px solid var(--bd);border-radius:10px;background:var(--gz);color:var(--tx);width:100%;transition:border-color .15s;}
+.login-field select:focus,.login-field input:focus{outline:none;border-color:var(--azm);background:#fff;box-shadow:0 0 0 3px rgba(25,118,210,.1);}
+.login-btn{width:100%;padding:13px;background:var(--azm);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px;}
+.login-btn:hover{background:var(--azd);}
+.login-btn:disabled{background:#90CAF9;cursor:not-allowed;}
+.login-erro{margin-top:14px;background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2;border-radius:8px;padding:10px 14px;font-size:13px;text-align:center;display:none;}
+
+/* ── APP ── */
+#app{display:none;}
+
+/* ── TOP BAR ── */
+.top-bar{background:var(--azd);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.top-bar.adm-bar{background:var(--adm);}
+.top-bar-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.85);}
+.top-bar-user{display:flex;align-items:center;gap:10px;}
+.top-bar-nome{font-size:12px;color:rgba(255,255,255,.85);font-weight:500;}
+.adm-badge-top{font-size:10px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;padding:3px 10px;border-radius:20px;}
+.cloud-status{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.7);}
+.cloud-dot{width:8px;height:8px;border-radius:50%;background:#4CAF50;transition:background .3s;}
+.cloud-dot.saving{background:#FF9800;animation:pulse .6s infinite;}
+.cloud-dot.error{background:#f44336;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn-logout{font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:#fff;cursor:pointer;transition:all .15s;}
+.btn-logout:hover{background:rgba(255,255,255,.15);}
+
+/* ── TABS ADMIN ── */
+.adm-tabs{background:var(--adm);padding:0 20px;display:flex;gap:4px;border-top:1px solid rgba(255,255,255,.1);}
+.adm-tab{font-size:12px;font-weight:600;padding:10px 20px 8px;border:none;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border-bottom:3px solid transparent;}
+.adm-tab:hover{background:rgba(255,255,255,.2);color:#fff;}
+.adm-tab.at{background:#fff;color:var(--adm);font-weight:700;border-bottom-color:#fff;}
+
+/* ── PAINEL ADMIN ── */
+#painel-admin{display:none;padding:24px 28px;}
+#painel-admin.at{display:block;}
+.adm-header{background:linear-gradient(135deg,var(--adm),var(--adm2));border-radius:14px;padding:24px 28px;margin-bottom:22px;color:#fff;}
+.adm-header h2{font-size:20px;font-weight:800;margin-bottom:4px;}
+.adm-header p{font-size:13px;opacity:.8;}
+.adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px;}
+.adm-prof-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08);transition:box-shadow .2s;cursor:pointer;}
+.adm-prof-card:hover{box-shadow:0 4px 18px rgba(74,20,140,.15);}
+.adm-prof-head{background:var(--admc);padding:14px 18px;display:flex;align-items:center;gap:12px;}
+.adm-prof-avatar{width:38px;height:38px;border-radius:50%;background:var(--adm2);color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.adm-prof-name{font-size:13px;font-weight:600;color:var(--adm);flex:1;}
+.adm-prof-stats{display:flex;gap:8px;padding:12px 18px;background:#fafafa;border-top:1px solid var(--bd);}
+.adm-stat{text-align:center;flex:1;}
+.adm-stat-val{font-size:18px;font-weight:700;color:var(--tx);}
+.adm-stat-lbl{font-size:10px;color:var(--mt);text-transform:uppercase;}
+.adm-stat.c .adm-stat-val{color:#2E7D32;}
+.adm-stat.a .adm-stat-val{color:var(--azm);}
+.adm-stat.p .adm-stat-val{color:#E65100;}
+
+/* ── MODAL ADMIN ── */
+#adm-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;overflow-y:auto;padding:20px;}
+#adm-modal.open{display:flex;align-items:flex-start;justify-content:center;}
+.adm-modal-box{background:#fff;border-radius:16px;width:100%;max-width:960px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.adm-modal-head{background:linear-gradient(135deg,var(--adm),var(--adm2));padding:20px 28px;display:flex;align-items:center;justify-content:space-between;}
+.adm-modal-head h3{font-size:16px;font-weight:700;color:#fff;}
+.adm-modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.adm-modal-close:hover{background:rgba(255,255,255,.3);}
+.adm-modal-body{padding:0;}
+.adm-enc-tabs{display:flex;overflow-x:auto;background:var(--admc);padding:0 20px;gap:3px;scrollbar-width:thin;}
+.adm-enc-tab{font-size:11px;font-weight:500;padding:9px 14px 7px;border:none;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap;background:rgba(74,20,140,.1);color:var(--adm);border-bottom:3px solid transparent;flex-shrink:0;}
+.adm-enc-tab.at{background:#fff;font-weight:700;border-bottom-color:#fff;}
+.adm-enc-tab.pre::after{content:"●";font-size:7px;color:#4CAF50;margin-left:4px;vertical-align:super;}
+.adm-enc-view{display:none;padding:20px 24px;max-height:70vh;overflow-y:auto;}
+.adm-enc-view.at{display:block;}
+.adm-readonly-banner{background:#FFF3E0;border-left:4px solid #FF9800;padding:10px 16px;border-radius:0 8px 8px 0;font-size:12px;color:#E65100;margin-bottom:16px;}
+
+/* Itens read-only admin */
+.adm-item{border:1.5px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.adm-item-head{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;}
+.adm-item-head.pos{background:#E8F5E9;border-left:4px solid #4CAF50;}
+.adm-item-head.neg{background:#FBE9E7;border-left:4px solid #FF5722;}
+.adm-item-head.dest{background:#E3F2FD;border-left:4px solid var(--azm);}
+.adm-item-head.atc{background:#FFF8E1;border-left:4px solid #FF9800;}
+.adm-item-head.acao{background:#F3E5F5;border-left:4px solid #9C27B0;}
+.adm-item-head.acai{background:#FBE9E7;border-left:4px solid #9C27B0;}
+.adm-item-tit{font-size:13px;font-weight:600;flex:1;}
+.adm-item-tit.pos{color:#1B5E20;}
+.adm-item-tit.neg{color:#BF360C;}
+.adm-item-tit.dest{color:var(--azd);}
+.adm-item-tit.atc{color:#E65100;}
+.adm-item-tit.acao{color:#4A148C;}
+.adm-item-tit.acai{color:#6A1B9A;}
+.adm-item-tog{font-size:14px;color:var(--adm2);transition:transform .2s;flex-shrink:0;}
+.adm-item-tog.ab{transform:rotate(180deg);}
+.adm-item-body{display:none;padding:16px 20px;background:#fafafa;flex-direction:column;gap:10px;}
+.adm-item-body.ab{display:flex;}
+.adm-campo{display:flex;flex-direction:column;gap:4px;}
+.adm-campo label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--mt);}
+.adm-val{font-size:13px;padding:9px 12px;background:#fff;border:1px solid var(--bd);border-radius:8px;color:var(--tx);min-height:38px;line-height:1.5;white-space:pre-wrap;}
+.adm-meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.st-badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;}
+.st-badge.pend{background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;}
+.st-badge.andam{background:#E3F2FD;color:var(--azd);border:1px solid var(--azb);}
+.st-badge.concl{background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7;}
+
+/* ── ABAS ENCONTROS ── */
+.enc-bar{background:var(--azd);padding:0 20px;display:flex;align-items:flex-end;gap:3px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--azb) transparent;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.enc-bar::-webkit-scrollbar{height:4px;}
+.enc-bar::-webkit-scrollbar-thumb{background:var(--azb);border-radius:2px;}
+.enc-aba{font-size:11px;font-weight:500;padding:9px 16px 7px;border:none;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap;transition:all .15s;background:rgba(255,255,255,.12);color:rgba(255,255,255,.72);border-bottom:3px solid transparent;min-width:90px;max-width:160px;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.enc-aba:hover{background:rgba(255,255,255,.22);color:#fff;}
+.enc-aba.at{background:#fff;color:var(--azd);font-weight:700;border-bottom-color:#fff;}
+.enc-aba.pre::after{content:"●";font-size:7px;color:#4CAF50;margin-left:4px;vertical-align:super;}
+.btn-novo-enc{font-size:11px;font-weight:600;padding:7px 16px 5px;border:none;border-radius:6px 6px 0 0;cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.55);border-bottom:3px solid transparent;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.btn-novo-enc:hover{background:rgba(255,255,255,.18);color:#fff;}
+
+/* ── PÁGINA ── */
+.page{padding:24px 28px;}
+
+/* ── HEADER CARD ── */
+.fh-card{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:18px;box-shadow:0 1px 5px rgba(0,0,0,.1);}
+.fh-img{width:100%;display:block;}
+.fh-meta{padding:18px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.mf{display:flex;flex-direction:column;gap:5px;}
+.mf label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--azm);}
+.mf input,.mf select,.mf textarea{font-size:14px;padding:10px 13px;border:1.5px solid var(--bd);border-radius:8px;background:var(--gz);color:var(--tx);width:100%;font-family:inherit;transition:border-color .15s;}
+.mf textarea{min-height:80px;resize:vertical;line-height:1.6;}
+.mf input:focus,.mf select:focus,.mf textarea:focus{outline:none;border-color:var(--azm);background:#fff;box-shadow:0 0 0 3px rgba(25,118,210,.1);}
+.mf input[readonly]{background:var(--azc);color:var(--azd);font-weight:500;cursor:default;}
+
+/* ── INDICADORES ── */
+.ind-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.ind{background:#fff;border-radius:10px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.ind.az{border-left:4px solid var(--azm);}
+.ind.vd{border-left:4px solid #4CAF50;}
+.ind.lr{border-left:4px solid #FF9800;}
+.ind.rx{border-left:4px solid #9C27B0;}
+.ind-lbl{font-size:10px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.4px;}
+.ind-val{font-size:28px;font-weight:700;color:var(--tx);line-height:1.2;margin:4px 0;}
+.ind-sub{font-size:11px;color:var(--mt);}
+
+/* ── TIMELINE ── */
+.timeline-card{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.tl-head{background:var(--azd);padding:12px 24px;display:flex;align-items:center;gap:10px;}
+.tl-head h2{font-size:14px;font-weight:600;color:#fff;}
+.tl-badge{font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff;margin-left:auto;}
+.tl-body{padding:18px 24px;}
+.tl{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:14px;}
+.tl-col{display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0;}
+.tl-dot{width:13px;height:13px;border-radius:50%;background:var(--azm);flex-shrink:0;margin-top:5px;cursor:pointer;transition:transform .15s;}
+.tl-dot:hover{transform:scale(1.3);}
+.tl-dot.vz{background:#e0e0e0;}
+.tl-line{flex:1;width:2px;background:#e0e0e0;min-height:18px;margin:3px 0;}
+.tl-c{flex:1;padding-bottom:14px;cursor:pointer;}
+.tl-c:hover .tl-enc-n{color:var(--azm);text-decoration:underline;}
+.tl-enc-n{font-size:10px;font-weight:700;color:var(--azm);text-transform:uppercase;letter-spacing:.4px;}
+.tl-tema{font-size:13px;font-weight:500;color:var(--tx);margin:2px 0;}
+.tl-obs{font-size:11px;color:var(--mt);}
+.tl-vazio{font-size:12px;color:var(--mt);padding:8px 0;}
+
+/* ── ENCONTRO ── */
+.enc-wrap{display:none;}
+.enc-wrap.at{display:block;}
+.enc-header-card{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:18px;box-shadow:0 1px 5px rgba(0,0,0,.1);}
+.enc-header-top{background:var(--azd);padding:12px 24px;display:flex;align-items:center;gap:14px;}
+.enc-header-top h2{font-size:14px;font-weight:600;color:#fff;flex:1;}
+.enc-num-badge{background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;}
+.enc-meta-grid{padding:18px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ── STATUS BLOCOS ── */
+.bloco-status{display:flex;gap:4px;flex-shrink:0;}
+.st-btn{font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;border:1.5px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;background:rgba(255,255,255,.7);color:#aaa;}
+.st-btn.at-pend{background:#FFF3E0;color:#E65100;border-color:#FFCC80;}
+.st-btn.at-andam{background:#E3F2FD;color:var(--azd);border-color:var(--azb);}
+.st-btn.at-concl{background:#E8F5E9;color:#1B5E20;border-color:#A5D6A7;}
+
+/* ── BLOCOS ── */
+.bloco{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.bloco-head{display:flex;align-items:center;gap:12px;padding:13px 22px;cursor:pointer;user-select:none;}
+.bloco-head.pos{background:#E8F5E9;border-left:4px solid #4CAF50;}
+.bloco-head.neg{background:#FBE9E7;border-left:4px solid #FF5722;}
+.bloco-head.dest{background:#E3F2FD;border-left:4px solid var(--azm);}
+.bloco-head.atc{background:#FFF8E1;border-left:4px solid #FF9800;}
+.bloco-head.acao{background:#F3E5F5;border-left:4px solid #9C27B0;}
+.bloco-head.acai{background:#FBE9E7;border-left:4px solid #9C27B0;}
+.bloco-tit{font-size:14px;font-weight:600;flex:1;line-height:1.3;}
+.bloco-tit.pos{color:#1B5E20;}.bloco-tit.neg{color:#BF360C;}.bloco-tit.dest{color:var(--azd);}
+.bloco-tit.atc{color:#E65100;}.bloco-tit.acao{color:#4A148C;}.bloco-tit.acai{color:#6A1B9A;}
+.bloco-tog{font-size:16px;color:var(--mt);transition:transform .2s;flex-shrink:0;}
+.bloco-tog.ab{transform:rotate(180deg);}
+.bloco-body{padding:20px 24px;display:none;flex-direction:column;gap:18px;}
+.bloco-body.ab{display:flex;}
+
+/* ── REGISTROS ── */
+.reg-card{background:var(--gz);border:1.5px solid var(--bd);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+.reg-topo{display:flex;align-items:center;gap:10px;}
+.reg-n{font-size:15px;font-weight:700;color:var(--azm);width:26px;flex-shrink:0;}
+.reg-main{flex:1;}
+.reg-main label{font-size:10px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.ev-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding-left:36px;}
+.ev-label{font-size:10px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+
+input.ci{font-size:14px;padding:11px 14px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:var(--tx);width:100%;transition:border-color .15s;}
+input.ci:focus{outline:none;border-color:var(--azm);box-shadow:0 0 0 3px rgba(25,118,210,.1);}
+textarea.ct{font-size:14px;padding:11px 14px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:var(--tx);width:100%;min-height:80px;line-height:1.7;resize:vertical;font-family:inherit;transition:border-color .15s;}
+textarea.ct:focus{outline:none;border-color:var(--azm);box-shadow:0 0 0 3px rgba(25,118,210,.1);}
+
+/* ── BOTÕES ── */
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;padding:18px 24px;border-top:1px solid var(--bd);}
+.btn{font-size:13px;font-weight:500;padding:9px 20px;border-radius:8px;border:none;cursor:pointer;transition:all .15s;}
+.btn-p{background:var(--azm);color:#fff;}.btn-p:hover{background:var(--azd);}
+.btn-s{background:var(--gz);color:var(--tx);border:1px solid var(--bd);}.btn-s:hover{background:#e8e8e8;}
+.btn-d{background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2;}.btn-d:hover{background:#FFCDD2;}
+.btn-save{background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7;}.btn-save:hover{background:#C8E6C9;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:#2E7D32;color:#fff;font-size:13px;font-weight:500;padding:10px 20px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:all .3s;z-index:9999;pointer-events:none;}
+#toast.show{opacity:1;transform:translateY(0);}
+#toast.erro{background:#C62828;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.fh-meta,.enc-meta-grid,.adm-meta-row{grid-template-columns:1fr 1fr;}.ind-grid{grid-template-columns:repeat(2,1fr);}.ev-grid{grid-template-columns:1fr;}}
+@media(max-width:580px){.page{padding:14px 12px;}.fh-meta,.enc-meta-grid{grid-template-columns:1fr;}.bloco-status{flex-wrap:wrap;}.adm-grid{grid-template-columns:1fr;}}
+@media print{.top-bar,.adm-tabs,.enc-bar,.btn-row,.btn-novo-enc,#loading-overlay,#adm-modal{display:none!important;}.enc-wrap{display:block!important;}.bloco-body{display:flex!important;}body{background:#fff;}}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-txt">Conectando...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="tela-login" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="login-badge">Sistema de Tutoria</span>
+      <h1>FE 1 — Ficha de Evolução<br>da Tutoria Coletiva</h1>
+      <p>Acesse com suas credenciais</p>
+    </div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <select id="login-nome">
+        <option value="">— Selecione seu nome —</option>
+        <optgroup label="── Administração ──">
+          <option>Gisele (CGPG)</option>
+          <option>Guilherme (Vice-diretor)</option>
+          <option>Raffael (Diretor)</option>
+          <option>Ricardo (Vice-diretor)</option>
+          <option>Silvana (CGPG)</option>
+          <option>Supervisão</option>
+        </optgroup>
+        <optgroup label="── Tutores ──">
+          <option>Alexsandro De Oliveira Andrade</option>
+          <option>Amanda Imamura Russo</option>
+          <option>Ana Paula Dos Santos</option>
+          <option>Andreia Brandao Braga</option>
+          <option>Angelo Jose Costa</option>
+          <option>Carlos Pereira De Souza</option>
+          <option>Claudinei Silva Da Conceicao Bispo</option>
+          <option>Cleusa Da Silva Salomao</option>
+          <option>Edson Gomes</option>
+          <option>Eduardo Pereira Da Cruz</option>
+          <option>Efigenia Do Rosario Araujo</option>
+          <option>Elaine Francisca Rodrigues</option>
+          <option>Eliana Macedo Da Mota Castro</option>
+          <option>Gabriel Borlinck Figueiredo</option>
+          <option>Gilson Santos Silva</option>
+          <option>Helio Da Silva</option>
+          <option>Jessica Amaral Dos Santos</option>
+          <option>Livia Cristiane Alves Pereira</option>
+          <option>Luci Mary Venancio De Andrade Ligasacchi</option>
+          <option>Marcia Dos Reis Gaspar</option>
+          <option>Patricia Correa Braga Monteiro</option>
+          <option>Paulo Domingos Da Silva Pereira</option>
+          <option>Ricardo Costa Dobrowisch</option>
+          <option>Rita De Cassia Franca</option>
+          <option>Rodrigo Alves Da Silva</option>
+          <option>Rosangela Piccolomo</option>
+          <option>Santana Alves De Macedo</option>
+          <option>Serginei Rigo De Urzedo</option>
+          <option>Silvia Cirlene Pultrini</option>
+          <option>Sueli Maria Dos Santos Anjos</option>
+          <option>Tadeu Silvestre Da Silva</option>
+          <option>Valderlane Lucia Da Silva</option>
+          <option>Vanderleia Ricardo Da Silva</option>
+          <option>Veronica Carvalho Galan</option>
+          <option>Wallace Viana Evangelista</option>
+          <option>Willians Alves</option>
+          <option>Ysmaylla Karamy De Moura Barbosa</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="tentarLogin()">Entrar</button>
+    <div class="login-erro" id="login-erro"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="top-bar" id="top-bar">
+    <span class="top-bar-title">FE 1 — Ficha de Evolução da Tutoria Coletiva</span>
+    <div class="top-bar-user">
+      <div class="cloud-status"><div class="cloud-dot" id="cloud-dot"></div><span id="cloud-txt">Sincronizado</span></div>
+      <span id="adm-badge-top"></span>
+      <span class="top-bar-nome" id="top-nome"></span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </div>
+
+  <!-- Tabs admin -->
+  <div class="adm-tabs" id="adm-tabs" style="display:none">
+    <button class="adm-tab at" id="tab-visao" onclick="mudarTabAdm('visao')">👁 Visão Geral</button>
+    <button class="adm-tab" id="tab-fichas" onclick="mudarTabAdm('fichas')">📋 Meus Encontros</button>
+  </div>
+
+  <!-- Painel admin -->
+  <div id="painel-admin">
+    <div class="adm-header">
+      <h2 id="adm-titulo">Painel Administrativo</h2>
+      <p id="adm-subtitulo">Visualização somente leitura — tutoria coletiva</p>
+    </div>
+    <div class="adm-grid" id="adm-grid"></div>
+  </div>
+
+  <!-- Conteúdo tutor -->
+  <div id="tutor-cont" style="display:none">
+    <div class="enc-bar" id="enc-abas"></div>
+    <div class="page">
+      <div class="fh-card">
+        <img class="fh-img" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA3ADcAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCACZBxsDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKACiiigAooooAKKKKACiiigAoooJxQAUUxpVXJYgADqTVS48R6PaZE+oRZHZG3H9Klzit2OzZeoyAcE1hXPj/SIeIY5ZT2wu0H86oTfEK8kJ+zWEaehdif8ACspYijHqPlkzq9y4znpQXUDcelcLc+K9euTxe+WM/diQD9etUp729uTme8kf2ZyayeMj0Q1B9TvZ9e0e2yJtRiBHVd4J/IVRuPGuhQj93K8pHaND/M4ri9vbNGP0rJ4yo9lYr2aOmuPiBnIttPJHYySY/lVKfxxrUoxEkMXoVXJ/WseisXXqvqPliWptf1y4GH1GQeynH8qrPLLK26Z2Y+rNk0lFZuUnuyrWCiiikAUUUUAFFFFABVjSr2PTtQivpIi4jJO1SATx71XopptO6A6Cfx9dkYtrCNf99yf5Yqhc+LNeuTxe+WPSNQKzqK0lWqy3YlFIfPeX11kXF3I49HckUwAgYJoorIYUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAGXHzI2COhBq3ba/rdt/q9Sk4PG5t386qUU1Jx2Ybm3beO9UjAW6t4pfVhlT/AIfpWja+PNMkIF1byRHufvCuTpCAa2jiKsetyXCLPQLXxFo14QsGoRlj0UnBP51b81PWvNNoznPPrU9rqWo2f/HtfSJ7Bjj8ulbRxj+0iXA9FDqehpQQRkVxlp461W2wLmNJvcrg/pWrZ+PtMnAW6heI9zjcP0rojiaMupPJI3qKrWmr6ffrm0u439QG5/KrCturZNPYkWiiimAUUUUAFFFFABTJkd8bRnHYmn0UAfNn7WP/AAS7/Zn/AGqLe61e98Lp4b8TTOZE8TaFEscryd/Pi+5OCeSWG/jhxnn8vv2uf+CY/wC0j+yXPd+INS0UeIvCkOXXxNoqM8cUf/TxGRugI7k5X0Y9v3U61DLYQTxtDOodHUq6OMhgeoI7iuijiqlHTddj4TiXw9yDiJOo4+yrP7cFa7/vR2l+D8z+ajcO5x9aWv2J/bN/4I0/A347G58Z/BUw+B/FEkbOyWsX/EuvpO3mQj/VE/34wPUqxr8tf2hf2Xvjj+y34r/4RD4z+B7jTJZC32K+UeZa3qg8tDKBtccjj7wyMgZr1aWIp1ttGfzzxLwTnnDE3KvDnpdJx1j8+sX66dmzgKKKK3PkAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAC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" alt="Cabeçalho FE1 Coletiva">
+        <div class="fh-meta">
+          <div class="mf"><label>Tutor Responsável</label><input type="text" id="inp-tutor" readonly></div>
+          <div class="mf"><label>Tema da Tutoria Coletiva</label><input id="inp-tema" class="ci" type="text" data-meta="tema" placeholder="Ex: Projeto de Vida, Protagonismo..."></div>
+          <div class="mf"><label>Nomes dos Tutorados</label><input id="inp-tut" class="ci" type="text" data-meta="tutorados" placeholder="Nomes ou turma dos tutorados..."></div>
+        </div>
+        <div style="padding:0 24px 18px">
+          <div class="mf"><label>Observações gerais da tutoria</label><textarea id="inp-obs" class="ct" rows="3" data-meta="obs" placeholder="Anotações gerais sobre a turma..."></textarea></div>
+        </div>
+      </div>
+      <div class="ind-grid">
+        <div class="ind az"><div class="ind-lbl">Encontros</div><div class="ind-val" id="i-encs">0</div><div class="ind-sub">registrados</div></div>
+        <div class="ind vd"><div class="ind-lbl">Pontos positivos</div><div class="ind-val" id="i-pos">0</div><div class="ind-sub">identificados</div></div>
+        <div class="ind lr"><div class="ind-lbl">Pontos de atenção</div><div class="ind-val" id="i-atc">0</div><div class="ind-sub">identificados</div></div>
+        <div class="ind rx"><div class="ind-lbl">Ações registradas</div><div class="ind-val" id="i-ac">0</div><div class="ind-sub">gerais + individuais</div></div>
+      </div>
+      <div class="timeline-card">
+        <div class="tl-head"><h2>Histórico de Encontros</h2><span class="tl-badge" id="tl-badge">0 encontros</span></div>
+        <div class="tl-body">
+          <div class="tl" id="tl-list"></div>
+          <div class="tl-vazio" id="tl-vazio">Nenhum encontro registrado. Clique em "Novo encontro" na barra acima.</div>
+        </div>
+      </div>
+      <div id="encs-cont"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal admin -->
+<div id="adm-modal">
+  <div class="adm-modal-box">
+    <div class="adm-modal-head">
+      <h3 id="adm-modal-titulo">Encontros do Tutor</h3>
+      <button class="adm-modal-close" onclick="fecharModal()">×</button>
+    </div>
+    <div class="adm-modal-body">
+      <div class="adm-enc-tabs" id="adm-enc-tabs"></div>
+      <div id="adm-enc-views"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══ CREDENCIAIS ══
+const CREDS = {
+  "Raffael (Diretor)":        "Ra@23!d",
+  "Guilherme (Vice-diretor)": "Gu#47$v",
+  "Ricardo (Vice-diretor)":   "Ri!82*w",
+  "Gisele (CGPG)":            "Gi%51&c",
+  "Silvana (CGPG)":           "Si@36#g",
+  "Supervisão":               "sim2026",
+  // Tutores
+  "Ysmaylla Karamy De Moura Barbosa":"JxA&F1","Eduardo Pereira Da Cruz":"BaB%l6",
+  "Sueli Maria Dos Santos Anjos":"JN5h8&","Efigenia Do Rosario Araujo":"nl3Y@k",
+  "Rosangela Piccolomo":"*0pX*o","Angelo Jose Costa":"Dcf3%W",
+  "Rita De Cassia Franca":"u#lV7U","Alexsandro De Oliveira Andrade":"2%FRux",
+  "Andreia Brandao Braga":"hD5yY&","Luci Mary Venancio De Andrade Ligasacchi":"W@B9@k",
+  "Edson Gomes":"@iZ28R","Willians Alves":"2D0e!u",
+  "Paulo Domingos Da Silva Pereira":"ao4%*R","Tadeu Silvestre Da Silva":"x#A@H7",
+  "Cleusa Da Silva Salomao":"gVT*t8","Gilson Santos Silva":"DNlE0$",
+  "Serginei Rigo De Urzedo":"*Yq1rq","Marcia Dos Reis Gaspar":"@8zNYx",
+  "Silvia Cirlene Pultrini":"c!H3cR","Carlos Pereira De Souza":"1uhWD!",
+  "Livia Cristiane Alves Pereira":"8G#qr7","Elaine Francisca Rodrigues":"L6n0!7",
+  "Santana Alves De Macedo":"Zy&dF5","Vanderleia Ricardo Da Silva":"4hO4@j",
+  "Ana Paula Dos Santos":"F9!!n3","Claudinei Silva Da Conceicao Bispo":"6I!K6z",
+  "Patricia Correa Braga Monteiro":"3hBsO#","Eliana Macedo Da Mota Castro":"iC!f8i",
+  "Wallace Viana Evangelista":"t%9Bk1","Jessica Amaral Dos Santos":"Y&5iHq",
+  "Gabriel Borlinck Figueiredo":"sj!T7m","Rodrigo Alves Da Silva":"j34!Lu",
+  "Ricardo Costa Dobrowisch":"&Ei1on","Helio Da Silva":"3H%WkA",
+  "Amanda Imamura Russo":"&baQI6","Veronica Carvalho Galan":"Rao%6j",
+  "Valderlane Lucia Da Silva":"j$fU2B"
+};
+
+const ADMINS = ["Raffael (Diretor)","Guilherme (Vice-diretor)","Ricardo (Vice-diretor)","Gisele (CGPG)","Silvana (CGPG)","Supervisão"];
+const TUTORES_LIST = Object.keys(CREDS).filter(n => !ADMINS.includes(n)).sort();
+
+const MAX_ENC = 10;
+
+const BLOCOS = [
+  { id:"pos",  cls:"pos",  tit:"1 — Geral: pontos positivos",         lbl:"Ponto positivo"       },
+  { id:"neg",  cls:"neg",  tit:"2 — Geral: pontos de atenção",         lbl:"Ponto de atenção"     },
+  { id:"dest", cls:"dest", tit:"3 — Estudantes destaques",             lbl:"Estudante destaque"   },
+  { id:"atc",  cls:"atc",  tit:"4 — Estudantes pontos de atenção",     lbl:"Estudante em atenção" },
+  { id:"acao", cls:"acao", tit:"5 — Ações gerais / coletivas",         lbl:"Ação geral"           },
+  { id:"acai", cls:"acai", tit:"6 — Ações individuais",                lbl:"Ação individual"      },
+];
+
+// ══ ESTADO ══
+let TUTOR_LOGADO = null;
+let TUTOR_KEY    = null;
+let IS_ADMIN     = false;
+let saveTimer    = null;
+
+const col = { tema:"", tutorados:"", obs:"", encs:[] };
+
+function novoEnc(n) {
+  const blocos = {};
+  BLOCOS.forEach(b => {
+    blocos[b.id] = [
+      {desc:"",ev1:"",ev2:"",ev3:""},
+      {desc:"",ev1:"",ev2:"",ev3:""},
+      {desc:"",ev1:"",ev2:"",ev3:""},
+    ];
+    blocos["_st_"+b.id] = "pend";
+  });
+  return { num:n, obj:"", obs:"", data:"", ...blocos };
+}
+
+function tutorToKey(nome){
+  return nome.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+}
+
+function fbPath(){ return "tutores_coletiva/"+TUTOR_KEY+"/dados"; }
+
+// ══ FIREBASE ══
+function svCloud(){
+  if(!TUTOR_KEY) return;
+  setCloudStatus("saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    const dados = JSON.parse(JSON.stringify(col));
+    function doSave(){
+      window._fbSet(fbPath(), dados)
+        .then(()=>{ setCloudStatus("ok"); mostrarToast("✓ Salvo na nuvem","ok"); })
+        .catch(()=>{ setCloudStatus("error"); mostrarToast("⚠ Erro ao salvar","erro"); });
+    }
+    if(window._fbReady){ doSave(); }
+    else { window._fbQueue=window._fbQueue||[]; window._fbQueue.push(doSave); }
+  }, 800);
+}
+
+function setCloudStatus(s){
+  const dot=document.getElementById("cloud-dot"), txt=document.getElementById("cloud-txt");
+  if(!dot) return;
+  dot.className="cloud-dot"+(s==="saving"?" saving":s==="error"?" error":"");
+  txt.textContent = s==="saving"?"Salvando...":s==="error"?"Erro":"Sincronizado";
+}
+
+function fbGetSafe(path){
+  return new Promise((resolve,reject)=>{
+    if(window._fbReady){
+      window._fbGet(path).then(resolve).catch(reject);
+    } else {
+      window._fbQueue=window._fbQueue||[];
+      window._fbQueue.push(()=>{ window._fbGet(path).then(resolve).catch(reject); });
+    }
+  });
+}
+
+function carregarDoFirebase(path, cb){
+  fbGetSafe(path).then(snap=>cb(snap.val())).catch(()=>cb(null));
+}
+
+// ══ TOAST ══
+let toastT=null;
+function mostrarToast(msg,tipo){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.className=tipo==="erro"?"show erro":"show";
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(()=>t.className="",2500);
+}
+
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function gel(id){ return document.getElementById(id); }
+
+// ══ INDICADORES ══
+function atuInd(){
+  let pos=0,atc=0,ac=0;
+  col.encs.forEach(e=>{
+    BLOCOS.forEach(b=>{
+      e[b.id].forEach(r=>{
+        if(r.desc&&r.desc.trim()){
+          if(b.id==="pos") pos++;
+          else if(b.id==="neg"||b.id==="atc") atc++;
+          else if(b.id==="acao"||b.id==="acai") ac++;
+        }
+      });
+    });
+  });
+  if(gel("i-encs")) gel("i-encs").textContent=col.encs.length;
+  if(gel("i-pos"))  gel("i-pos").textContent=pos;
+  if(gel("i-atc"))  gel("i-atc").textContent=atc;
+  if(gel("i-ac"))   gel("i-ac").textContent=ac;
+}
+
+// ══ TIMELINE ══
+function atuTimeline(){
+  const tl=gel("tl-list"), vz=gel("tl-vazio"), bg=gel("tl-badge");
+  if(!tl) return;
+  const com=col.encs.filter(e=>e.obj||e.data).length;
+  if(bg) bg.textContent=com+" encontro"+(com!==1?"s":"");
+  if(com===0){ tl.innerHTML=""; if(vz)vz.style.display="block"; return; }
+  if(vz) vz.style.display="none";
+  tl.innerHTML=col.encs.map((e,i)=>{
+    const td=e.obj||e.data, last=i===col.encs.length-1;
+    return '<div class="tl-item">'
+      +'<div class="tl-col">'
+      +'<div class="tl-dot'+(td?"":" vz")+'" onclick="irEnc('+i+')"></div>'
+      +(!last?'<div class="tl-line"></div>':"")
+      +'</div>'
+      +'<div class="tl-c" onclick="irEnc('+i+')">'
+      +'<div class="tl-enc-n">Encontro '+(i+1)+'</div>'
+      +'<div class="tl-tema">'+esc(e.obj||"Sem objetivo registrado")+'</div>'
+      +(e.data?'<div class="tl-obs">'+esc(e.data)+'</div>':"")
+      +'</div></div>';
+  }).join("");
+}
+
+// ══ STATUS BOTÕES ══
+function bStatus(encIdx,blocoId){
+  const v=col.encs[encIdx]["_st_"+blocoId]||"pend";
+  const opts=[{v:"pend",lbl:"Pendente"},{v:"andam",lbl:"Em andamento"},{v:"concl",lbl:"Concluído"}];
+  let h='<div class="bloco-status" id="bst_'+encIdx+'_'+blocoId+'">';
+  opts.forEach(o=>{
+    h+='<button class="st-btn'+(v===o.v?" at-"+o.v:"")+'" data-v="'+o.v+'" onclick="setSt('+encIdx+',\''+blocoId+'\',\''+o.v+'\',event)">'+o.lbl+"</button>";
+  });
+  return h+"</div>";
+}
+function setSt(encIdx,blocoId,val,ev){
+  ev.stopPropagation();
+  col.encs[encIdx]["_st_"+blocoId]=val; svCloud();
+  const cont=gel("bst_"+encIdx+"_"+blocoId);
+  if(cont){
+    cont.querySelectorAll(".st-btn").forEach(b=>b.classList.remove("at-pend","at-andam","at-concl"));
+    const at=cont.querySelector("[data-v='"+val+"']"); if(at) at.classList.add("at-"+val);
+  }
+  atuAba(encIdx);
+}
+
+// ══ ABA ENCONTRO ══
+function atuAba(idx){
+  const e=col.encs[idx]; if(!e) return;
+  const b=document.querySelector("[data-eid='"+idx+"']"); if(!b) return;
+  b.textContent=e.obj?(e.obj.length>18?e.obj.slice(0,16)+"…":e.obj):("Encontro "+(idx+1));
+  const temD=BLOCOS.some(bl=>e[bl.id].some(r=>r.desc&&r.desc.trim()));
+  b.classList.toggle("pre",!!(temD||e.obj||e.data));
+}
+
+// ══ BUILD BLOCO ══
+function bBloco(encIdx,bloco){
+  const bid="bl_"+encIdx+"_"+bloco.id;
+  const rows=col.encs[encIdx][bloco.id];
+  let regsHtml=rows.map((r,n)=>
+    '<div class="reg-card">'
+      +'<div class="reg-topo">'
+        +'<span class="reg-n">'+(n+1)+'.</span>'
+        +'<div class="reg-main">'
+          +'<label>'+bloco.lbl+" "+(n+1)+'</label>'
+          +'<textarea class="ct" rows="3" data-enc="'+encIdx+'" data-bl="'+bloco.id+'" data-n="'+n+'" data-sub="desc" placeholder="Descreva...">'+esc(r.desc)+'</textarea>'
+        +'</div>'
+      +'</div>'
+      +'<div class="ev-grid">'
+        +["ev1","ev2","ev3"].map((ev,ei)=>
+          '<div>'
+            +'<div class="ev-label">Evidência '+(ei+1)+'</div>'
+            +'<textarea class="ct" rows="2" data-enc="'+encIdx+'" data-bl="'+bloco.id+'" data-n="'+n+'" data-sub="'+ev+'" placeholder="Constatação / evidência...">'+esc(r[ev])+'</textarea>'
+          +'</div>'
+        ).join("")
+      +'</div>'
+    +'</div>'
+  ).join("");
+
+  return '<div class="bloco" id="'+bid+'">'
+    +'<div class="bloco-head '+bloco.cls+'" onclick="togBloco(\''+bid+'\')">'
+      +'<div class="bloco-tit '+bloco.cls+'">'+bloco.tit+'</div>'
+      +bStatus(encIdx,bloco.id)
+      +'<div class="bloco-tog" id="btog_'+bid+'">&#9662;</div>'
+    +'</div>'
+    +'<div class="bloco-body" id="bbd_'+bid+'">'+regsHtml+'</div>'
+    +'</div>';
+}
+function togBloco(bid){
+  const b=gel("bbd_"+bid),t=gel("btog_"+bid);
+  const ab=b.classList.contains("ab");
+  b.classList.toggle("ab",!ab); b.style.display=ab?"none":"flex";
+  if(t) t.classList.toggle("ab",!ab);
+}
+
+// ══ BUILD ENCONTRO ══
+function bEncontro(idx){
+  const e=col.encs[idx];
+  return '<div class="enc-wrap" id="enc_'+idx+'">'
+    +'<div class="enc-header-card">'
+      +'<div class="enc-header-top">'
+        +'<h2>Registro do Encontro</h2>'
+        +'<span class="enc-num-badge">Encontro '+(idx+1)+'</span>'
+      +'</div>'
+      +'<div class="enc-meta-grid">'
+        +'<div class="mf"><label>Objetivo do encontro</label>'
+          +'<input class="ci" type="text" value="'+esc(e.obj)+'" data-enc="'+idx+'" data-ef="obj" placeholder="Qual o objetivo deste encontro?"></div>'
+        +'<div class="mf"><label>Data</label>'
+          +'<input type="date" class="ci" value="'+esc(e.data)+'" data-enc="'+idx+'" data-ef="data" style="cursor:pointer"></div>'
+        +'<div class="mf"><label>Observações gerais</label>'
+          +'<input class="ci" type="text" value="'+esc(e.obs)+'" data-enc="'+idx+'" data-ef="obs" placeholder="Observações..."></div>'
+      +'</div>'
+    +'</div>'
+    +BLOCOS.map(b=>bBloco(idx,b)).join("")
+    +'<div class="btn-row">'
+      +'<button class="btn btn-s" onclick="expAll('+idx+')">Expandir todos</button>'
+      +'<button class="btn btn-s" onclick="colAll('+idx+')">Recolher todos</button>'
+      +'<button class="btn btn-save" onclick="svCloud()">&#9729; Salvar na nuvem</button>'
+      +'<button class="btn btn-s" onclick="window.print()">Imprimir / PDF</button>'
+      +'<button class="btn btn-d" onclick="limparEnc('+idx+')">Limpar encontro</button>'
+    +'</div>'
+    +'</div>';
+}
+
+// ══ EXPAND / COLLAPSE ══
+function expAll(idx){ BLOCOS.forEach(b=>{ const bid="bl_"+idx+"_"+b.id; const bd=gel("bbd_"+bid),bt=gel("btog_"+bid); if(bd){bd.classList.add("ab");bd.style.display="flex";} if(bt)bt.classList.add("ab"); }); }
+function colAll(idx){ BLOCOS.forEach(b=>{ const bid="bl_"+idx+"_"+b.id; const bd=gel("bbd_"+bid),bt=gel("btog_"+bid); if(bd){bd.classList.remove("ab");bd.style.display="none";} if(bt)bt.classList.remove("ab"); }); }
+
+// ══ NAVEGAÇÃO ══
+let encAtivo=0;
+function irEnc(idx){
+  encAtivo=idx;
+  document.querySelectorAll(".enc-wrap").forEach(e=>e.classList.remove("at"));
+  document.querySelectorAll(".enc-aba").forEach(b=>b.classList.remove("at"));
+  const ew=gel("enc_"+idx); if(ew) ew.classList.add("at");
+  const ab=document.querySelector("[data-eid='"+idx+"']");
+  if(ab){ ab.classList.add("at"); ab.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"}); }
+}
+
+// ══ ADICIONAR ENCONTRO ══
+function addEnc(){
+  if(col.encs.length>=MAX_ENC){ alert("Máximo de "+MAX_ENC+" encontros."); return; }
+  col.encs.push(novoEnc(col.encs.length+1));
+  svCloud(); renderAbas();
+  const idx=col.encs.length-1;
+  const cont=gel("encs-cont"), div=document.createElement("div");
+  div.innerHTML=bEncontro(idx);
+  while(div.firstChild) cont.appendChild(div.firstChild);
+  irEnc(idx); atuTimeline(); atuInd();
+}
+
+// ══ LIMPAR ENCONTRO ══
+function limparEnc(idx){
+  if(!confirm("Limpar todos os dados deste encontro?")) return;
+  const n=col.encs[idx].num;
+  col.encs[idx]=novoEnc(n); svCloud();
+  const old=gel("enc_"+idx); if(old) old.remove();
+  const cont=gel("encs-cont"), div=document.createElement("div");
+  div.innerHTML=bEncontro(idx);
+  while(div.firstChild) cont.appendChild(div.firstChild);
+  irEnc(idx); atuAba(idx); atuTimeline(); atuInd();
+}
+
+// ══ RENDER ABAS ══
+function renderAbas(){
+  const bar=gel("enc-abas"); bar.innerHTML="";
+  col.encs.forEach((e,i)=>{
+    const b=document.createElement("button");
+    b.className="enc-aba"+(i===encAtivo?" at":"");
+    b.setAttribute("data-eid",i);
+    b.textContent=e.obj?(e.obj.length>18?e.obj.slice(0,16)+"…":e.obj):("Encontro "+(i+1));
+    const temD=BLOCOS.some(bl=>e[bl.id].some(r=>r.desc&&r.desc.trim()));
+    if(temD||e.obj||e.data) b.classList.add("pre");
+    b.onclick=(i=>()=>irEnc(i))(i); bar.appendChild(b);
+  });
+  const nb=document.createElement("button");
+  nb.className="btn-novo-enc"; nb.textContent="+ Novo encontro"; nb.onclick=addEnc;
+  bar.appendChild(nb);
+}
+
+// ══ EVENTOS DELEGADOS ══
+document.addEventListener("input",function(ev){
+  const el=ev.target;
+  if(el.dataset.meta){ col[el.dataset.meta]=el.value; svCloud(); return; }
+  if(el.dataset.enc!==undefined&&el.dataset.ef){
+    const idx=parseInt(el.dataset.enc);
+    col.encs[idx][el.dataset.ef]=el.value; svCloud(); atuAba(idx); atuTimeline(); return;
+  }
+  if(el.dataset.enc!==undefined&&el.dataset.bl&&el.dataset.sub){
+    const idx=parseInt(el.dataset.enc), n=parseInt(el.dataset.n);
+    col.encs[idx][el.dataset.bl][n][el.dataset.sub]=el.value; svCloud(); atuInd(); atuAba(idx);
+  }
+});
+document.addEventListener("change",function(ev){
+  const el=ev.target;
+  if(el.dataset.meta){ col[el.dataset.meta]=el.value; svCloud(); return; }
+  if(el.dataset.enc!==undefined&&el.dataset.ef){
+    const idx=parseInt(el.dataset.enc);
+    col.encs[idx][el.dataset.ef]=el.value; svCloud(); atuAba(idx); atuTimeline(); return;
+  }
+  if(el.dataset.enc!==undefined&&el.dataset.bl&&el.dataset.sub){
+    const idx=parseInt(el.dataset.enc), n=parseInt(el.dataset.n);
+    col.encs[idx][el.dataset.bl][n][el.dataset.sub]=el.value; svCloud(); atuInd(); atuAba(idx);
+  }
+});
+
+// ══ ADMIN: VISÃO GERAL ══
+function mudarTabAdm(tab){
+  gel("tab-visao").classList.toggle("at",tab==="visao");
+  gel("tab-fichas").classList.toggle("at",tab==="fichas");
+  gel("painel-admin").style.display=tab==="visao"?"block":"none";
+  gel("tutor-cont").style.display=tab==="fichas"?"block":"none";
+  if(tab==="fichas" && col.encs.length>0) irEnc(0);
+}
+
+function buildPainelAdmin(){
+  const grid=gel("adm-grid"); grid.innerHTML="";
+  let loaded=0;
+  TUTORES_LIST.forEach(nome=>{
+    const key=tutorToKey(nome);
+    fbGetSafe("tutores_coletiva/"+key+"/dados").then(snap=>{
+      const data=snap.val()||{encs:[]};
+      const encs=data.encs||[];
+      let pos=0,atc=0,ac=0;
+      encs.forEach(e=>{
+        BLOCOS.forEach(b=>{
+          (e[b.id]||[]).forEach(r=>{
+            if(r.desc&&r.desc.trim()){
+              if(b.id==="pos") pos++;
+              else if(b.id==="neg"||b.id==="atc") atc++;
+              else if(b.id==="acao"||b.id==="acai") ac++;
+            }
+          });
+        });
+      });
+      const initials=nome.split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase();
+      const card=document.createElement("div"); card.className="adm-prof-card";
+      card.innerHTML='<div class="adm-prof-head"><div class="adm-prof-avatar">'+initials+'</div>'
+        +'<div class="adm-prof-name">'+esc(nome)+'</div>'
+        +'<span style="font-size:11px;color:var(--mt)">'+encs.length+' encontro'+(encs.length!==1?"s":"")+'</span></div>'
+        +'<div class="adm-prof-stats">'
+        +'<div class="adm-stat c"><div class="adm-stat-val">'+pos+'</div><div class="adm-stat-lbl">Positivos</div></div>'
+        +'<div class="adm-stat a"><div class="adm-stat-val">'+atc+'</div><div class="adm-stat-lbl">Atenção</div></div>'
+        +'<div class="adm-stat p"><div class="adm-stat-val">'+ac+'</div><div class="adm-stat-lbl">Ações</div></div>'
+        +'</div>';
+      card.onclick=()=>abrirModalTutor(nome,data);
+      grid.appendChild(card);
+      loaded++;
+      if(loaded===TUTORES_LIST.length){
+        gel("adm-subtitulo").textContent="Visualização somente leitura — "+TUTORES_LIST.length+" tutores cadastrados";
+      }
+    }).catch(()=>{ loaded++; });
+  });
+}
+
+// ══ MODAL: VER ENCONTROS DE UM TUTOR ══
+function abrirModalTutor(nome,data){
+  gel("adm-modal-titulo").textContent="Encontros de: "+nome;
+  const tabsEl=gel("adm-enc-tabs"), viewEl=gel("adm-enc-views");
+  tabsEl.innerHTML=""; viewEl.innerHTML="";
+  const encs=data.encs||[];
+  if(encs.length===0){
+    viewEl.innerHTML='<div style="padding:24px;color:var(--mt);font-size:13px;">Nenhum encontro registrado por este tutor.</div>';
+    gel("adm-modal").classList.add("open"); return;
+  }
+  encs.forEach((e,i)=>{
+    const temD=BLOCOS.some(bl=>(e[bl.id]||[]).some(r=>r.desc&&r.desc.trim()));
+    const tab=document.createElement("button");
+    tab.className="adm-enc-tab"+(i===0?" at":"")+(temD||e.obj||e.data?" pre":"");
+    tab.textContent=e.obj?(e.obj.length>18?e.obj.slice(0,16)+"…":e.obj):("Encontro "+(i+1));
+    tab.onclick=(i=>()=>mudarEncModal(i))(i); tab.id="adm-etab-"+i;
+    tabsEl.appendChild(tab);
+
+    const view=document.createElement("div");
+    view.className="adm-enc-view"+(i===0?" at":""); view.id="adm-eview-"+i;
+    view.innerHTML=buildEncReadonly(e,i,nome);
+    viewEl.appendChild(view);
+  });
+  gel("adm-modal").classList.add("open");
+}
+
+function mudarEncModal(idx){
+  document.querySelectorAll(".adm-enc-tab").forEach((t,i)=>t.classList.toggle("at",i===idx));
+  document.querySelectorAll(".adm-enc-view").forEach((v,i)=>v.classList.toggle("at",i===idx));
+}
+function fecharModal(){ gel("adm-modal").classList.remove("open"); }
+
+function buildEncReadonly(e,idx,tutorNome){
+  let html='<div class="adm-readonly-banner">🔒 Visualização somente leitura — dados de '+esc(tutorNome)+'</div>';
+  html+='<div class="adm-meta-row">'
+    +'<div class="adm-campo"><label>Objetivo</label><div class="adm-val">'+esc(e.obj||"")+'</div></div>'
+    +'<div class="adm-campo"><label>Data</label><div class="adm-val">'+esc(e.data||"")+'</div></div>'
+    +'<div class="adm-campo"><label>Observações</label><div class="adm-val">'+esc(e.obs||"")+'</div></div>'
+    +'</div>';
+
+  BLOCOS.forEach(bloco=>{
+    const stVal=(e["_st_"+bloco.id])||"pend";
+    const stLabel=stVal==="concl"?"Concluído":stVal==="andam"?"Em andamento":"Pendente";
+    const togId="adm-btog-"+idx+"-"+bloco.id;
+    let rows="";
+    (e[bloco.id]||[]).forEach((r,n)=>{
+      const temDesc=r.desc&&r.desc.trim();
+      rows+='<div style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:12px 16px;margin-bottom:8px;">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;margin-bottom:6px;">'+bloco.lbl+' '+(n+1)+'</div>'
+        +'<div style="font-size:13px;color:'+(temDesc?"var(--tx)":"#bbb")+';margin-bottom:8px;">'+(temDesc?esc(r.desc):"<em>Não preenchido</em>")+'</div>'
+        +["ev1","ev2","ev3"].map((ev,ei)=>{
+          const v=r[ev]&&r[ev].trim();
+          return '<div style="font-size:11px;color:var(--mt);margin-bottom:2px;"><strong>Evidência '+(ei+1)+':</strong> '+(v?esc(v):"<em style=\'color:#bbb\'>—</em>")+'</div>';
+        }).join("")
+        +'</div>';
+    });
+    html+='<div class="adm-item">'
+      +'<div class="adm-item-head '+bloco.cls+'" onclick="togAdmItem(\''+togId+'\')">'
+        +'<div class="adm-item-tit '+bloco.cls+'">'+bloco.tit+'</div>'
+        +'<span class="st-badge '+stVal+'">'+stLabel+'</span>'
+        +'<div class="adm-item-tog" id="'+togId+'_tog">&#9662;</div>'
+      +'</div>'
+      +'<div class="adm-item-body" id="'+togId+'">'+rows+'</div>'
+      +'</div>';
+  });
+  return html;
+}
+
+function togAdmItem(id){
+  const body=gel(id),tog=gel(id+"_tog");
+  if(!body) return;
+  const ab=body.classList.contains("ab");
+  body.classList.toggle("ab",!ab); body.style.display=ab?"none":"flex";
+  if(tog) tog.classList.toggle("ab",!ab);
+}
+
+// ══ LOGIN / LOGOUT ══
+function tentarLogin(){
+  const nome=gel("login-nome").value;
+  const senha=gel("login-senha").value;
+  const erro=gel("login-erro");
+  if(!nome){ erro.textContent="Selecione seu nome."; erro.style.display="block"; return; }
+  if(CREDS[nome]&&CREDS[nome]===senha){
+    erro.style.display="none";
+    const btn=gel("login-btn"); btn.disabled=true; btn.textContent="Carregando...";
+    TUTOR_LOGADO=nome; TUTOR_KEY=tutorToKey(nome); IS_ADMIN=ADMINS.includes(nome);
+    gel("loading-overlay").style.display="flex";
+    carregarDoFirebase(fbPath(),data=>{
+      if(data){
+        if(data.tema!==undefined) col.tema=data.tema||"";
+        if(data.tutorados!==undefined) col.tutorados=data.tutorados||"";
+        if(data.obs!==undefined) col.obs=data.obs||"";
+        if(Array.isArray(data.encs)) col.encs=data.encs;
+        else col.encs=[];
+      } else {
+        col.tema=""; col.tutorados=""; col.obs=""; col.encs=[];
+      }
+      gel("loading-overlay").style.display="none";
+      gel("tela-login").style.display="none";
+      gel("app").style.display="block";
+      gel("top-nome").textContent=TUTOR_LOGADO;
+
+      if(IS_ADMIN){
+        gel("top-bar").className="top-bar adm-bar";
+        gel("adm-badge-top").innerHTML='<span class="adm-badge-top">Administrador</span>';
+        gel("adm-tabs").style.display="flex";
+        gel("adm-titulo").textContent="Painel de "+TUTOR_LOGADO;
+        gel("painel-admin").style.display="block";
+        gel("tutor-cont").style.display="none";
+        buildPainelAdmin();
+        preparaTutorCont(); // prepara em background
+      } else {
+        gel("adm-tabs").style.display="none";
+        gel("painel-admin").style.display="none";
+        gel("tutor-cont").style.display="block";
+        preparaTutorCont();
+      }
+    });
+  } else {
+    erro.textContent="Nome ou senha incorretos."; erro.style.display="block";
+    gel("login-senha").value=""; gel("login-senha").focus();
+  }
+}
+
+function preparaTutorCont(){
+  // Preenche campos meta
+  gel("inp-tutor").value=TUTOR_LOGADO||"";
+  gel("inp-tema").value=col.tema||"";
+  gel("inp-tut").value=col.tutorados||"";
+  gel("inp-obs").value=col.obs||"";
+
+  // Gera encontros
+  if(col.encs.length===0) col.encs.push(novoEnc(1));
+  const cont=gel("encs-cont"); cont.innerHTML="";
+  col.encs.forEach((e,i)=>{
+    const div=document.createElement("div");
+    div.innerHTML=bEncontro(i);
+    while(div.firstChild) cont.appendChild(div.firstChild);
+  });
+  renderAbas(); irEnc(0); atuTimeline(); atuInd();
+}
+
+function logout(){
+  TUTOR_LOGADO=null; TUTOR_KEY=null; IS_ADMIN=false;
+  col.tema=""; col.tutorados=""; col.obs=""; col.encs=[];
+  gel("app").style.display="none";
+  gel("tela-login").style.display="flex";
+  gel("top-bar").className="top-bar";
+  gel("adm-badge-top").innerHTML="";
+  gel("login-nome").value=""; gel("login-senha").value="";
+  gel("login-btn").disabled=false; gel("login-btn").textContent="Entrar";
+  gel("adm-grid").innerHTML="";
+  gel("encs-cont").innerHTML=""; gel("enc-abas").innerHTML="";
+  gel("adm-modal").classList.remove("open");
+}
+
+// ══ INIT ══
+window.addEventListener("fbready",()=>{
+  gel("loading-overlay").style.display="none";
+  gel("tela-login").style.display="flex";
+});
+setTimeout(()=>{
+  if(!window._fbReady){
+    gel("loading-overlay").style.display="none";
+    gel("tela-login").style.display="flex";
+  }
+},5000);
+document.addEventListener("DOMContentLoaded",()=>{
+  gel("login-senha").addEventListener("keydown",e=>{ if(e.key==="Enter") tentarLogin(); });
+});
+</script>
+</body>
+</html>
