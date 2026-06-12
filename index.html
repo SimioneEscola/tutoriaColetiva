@@ -8,6 +8,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyBRI2hr_NjYexleBE1clh_xLI9sBUSha5g",
     authDomain: "fe2-tutoria.firebaseapp.com",
@@ -19,11 +20,23 @@
   };
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const auth = getAuth(app);
   window._fbSet = (p,d) => set(ref(db,p),d);
   window._fbGet = (p) => get(ref(db,p));
-  window._fbReady = true;
-  if (window._fbQueue) { window._fbQueue.forEach(fn=>fn()); window._fbQueue=[]; }
-  window.dispatchEvent(new Event("fbready"));
+  window._fbReady = false;
+  // Aguarda autenticação anônima antes de liberar leitura/escrita.
+  // Necessário para regras do Realtime DB com .read/.write = "auth != null".
+  onAuthStateChanged(auth, (user) => {
+    if (user && !window._fbReady) {
+      window._fbReady = true;
+      if (window._fbQueue) { window._fbQueue.forEach(fn=>fn()); window._fbQueue=[]; }
+      window.dispatchEvent(new Event("fbready"));
+    }
+  });
+  signInAnonymously(auth).catch(err => {
+    console.error("Firebase auth (anônimo) falhou:", err);
+    window.dispatchEvent(new CustomEvent("fbautherror",{detail:err}));
+  });
 </script>
 
 <style>
