@@ -738,7 +738,7 @@ const CREDS = {
   "Valderlane Lucia Da Silva":"j$fU2B"
 };
 const ADMINS = ["Raffael (Diretor)","Guilherme (Vice-diretor)","Ricardo (Vice-diretor)","Gisele (CGPG)","Silvana (CGPG)"];
-const TUTORES_LIST = Object.keys(CREDS).filter(n=>!ADMINS.includes(n)).sort();
+const TUTORES_LIST = Object.keys(CREDS).sort(); // gestores também são tutores e possuem fichas
 
 // ══ HUMOR / PREOCUPAÇÕES (check-in) ══
 const HUMORES = [
@@ -954,6 +954,7 @@ TURMA_ORDER.forEach(t=>TODOS_ALUNOS[t].forEach(n=>{ALUNO_TURMA[n]=t;}));
 
 // ══ ESTADO ══
 let TUTOR_LOGADO=null, TUTOR_KEY=null, IS_ADMIN=false, saveTimer=null;
+let VIEW_ATUAL="tutor"; // controla retorno da ficha (tutor|gestao)
 let turmaSel="TODAS", alunosBusca="";
 let ENC_ATUAL=-1;          // índice do encontro em edição
 let ckFila=[], ckIdx=0, ckTemp={}; // check-in kiosk
@@ -1392,8 +1393,11 @@ function verFicha(idx){
 }
 function fecharFicha(){
   gel("ficha-view").style.display="none";
-  if(IS_ADMIN){ gel("adm-tabs").style.display="flex"; gel("gestao-cont").style.display="block"; }
-  else { gel("main-tabs").style.display="flex"; gel("tutor-cont").style.display="block"; }
+  if(IS_ADMIN){
+    gel("adm-tabs").style.display="flex"; gel("main-tabs").style.display="flex";
+    if(VIEW_ATUAL==="gestao") gel("gestao-cont").style.display="block";
+    else gel("tutor-cont").style.display="block";
+  } else { gel("main-tabs").style.display="flex"; gel("tutor-cont").style.display="block"; }
 }
 
 // Composição automática dos 6 blocos oficiais a partir das evidências
@@ -1632,6 +1636,12 @@ function fecharModal(){ gel("adm-modal").classList.remove("open"); }
 
 // ══════════ NAVEGAÇÃO ══════════
 function mudarMain(tab){
+  VIEW_ATUAL="tutor";
+  if(IS_ADMIN){
+    gel("gestao-cont").style.display="none";
+    gel("tutor-cont").style.display="block";
+    document.querySelectorAll(".adm-tab").forEach(b=>b.classList.remove("at"));
+  }
   ["hoje","checkin","reg","hist","tut"].forEach(t=>{
     const btn=gel("tab-"+t), pan=gel("panel-"+t);
     if(btn)btn.classList.toggle("at",t===tab);
@@ -1644,6 +1654,10 @@ function mudarMain(tab){
   if(tab==="tut")renderTutorados();
 }
 function mudarAdm(tab){
+  VIEW_ATUAL="gestao";
+  gel("tutor-cont").style.display="none";
+  gel("gestao-cont").style.display="block";
+  document.querySelectorAll(".main-tab").forEach(b=>b.classList.remove("at"));
   ["dash","mapa","temas"].forEach(t=>{
     const btn=gel("tab-adm-"+t), pan=gel("panel-adm-"+t);
     if(btn)btn.classList.toggle("at",t===tab);
@@ -1684,9 +1698,8 @@ function tentarLogin(){
 
         if(IS_ADMIN){
           gel("top-bar").className="top-bar adm-bar";
-          gel("top-badge-wrap").innerHTML='<span class="top-badge">Gestão</span>';
-          gel("adm-tabs").style.display="flex"; gel("main-tabs").style.display="none";
-          gel("gestao-cont").style.display="block"; gel("tutor-cont").style.display="none";
+          gel("top-badge-wrap").innerHTML='<span class="top-badge">Gestão · Tutor</span>';
+          gel("adm-tabs").style.display="flex"; gel("main-tabs").style.display="flex";
           gel("adm-titulo").textContent="Painel de "+TUTOR_LOGADO;
           mudarAdm("dash");
         } else {
