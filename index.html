@@ -8,50 +8,56 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── Projeto tutoriacoletiva ──
   const firebaseConfig = {
-    apiKey: "AIzaSyBRI2hr_NjYexleBE1clh_xLI9sBUSha5g",
-    authDomain: "fe2-tutoria.firebaseapp.com",
-    databaseURL: "https://fe2-tutoria-default-rtdb.firebaseio.com",
-    projectId: "fe2-tutoria",
-    storageBucket: "fe2-tutoria.firebasestorage.app",
-    messagingSenderId: "916340863680",
-    appId: "1:916340863680:web:ebfe4f8d14bac8bba13325"
+    apiKey: "AIzaSyD5mFznCxktXDdA72j5y-9zvqKe8cLMdqM",
+    authDomain: "tutoriacoletiva.firebaseapp.com",
+    databaseURL: "https://tutoriacoletiva-default-rtdb.firebaseio.com",
+    projectId: "tutoriacoletiva",
+    storageBucket: "tutoriacoletiva.firebasestorage.app",
+    messagingSenderId: "820088723937",
+    appId: "1:820088723937:web:5680ef6730094170401aa0"
   };
+
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const auth = getAuth(app);
+
   window._fbSet = (p,d) => set(ref(db,p),d);
   window._fbGet = (p) => get(ref(db,p));
-  window._fbReady = false;
   window._fbFailed = false;
+
   function _fbFlushQueue(){
     if (window._fbQueue) { window._fbQueue.forEach(fn=>{ try{fn();}catch(e){console.error(e);} }); window._fbQueue=[]; }
   }
-  // Aguarda autenticação anônima antes de liberar leitura/escrita.
-  // Necessário para regras do Realtime DB com .read/.write = "auth != null".
-  onAuthStateChanged(auth, (user) => {
-    if (user && !window._fbReady) {
+
+  // Regras abertas (.read/.write = true) — não precisa de autenticação.
+  // Libera imediatamente após o SDK inicializar.
+  function _fbInit(){
+    if (!window._fbReady) {
       window._fbReady = true;
       _fbFlushQueue();
       window.dispatchEvent(new Event("fbready"));
     }
-  });
-  signInAnonymously(auth).catch(err => {
-    console.error("Firebase auth (anônimo) falhou:", err);
-    window._fbFailed = true;
-    _fbFlushQueue(); // libera fila — operações vão falhar/retornar null, mas não travam o app
-    window.dispatchEvent(new CustomEvent("fbautherror",{detail:err}));
-  });
-  // Failsafe: se em 8s o Firebase não estiver pronto, libera o app em modo offline.
-  setTimeout(()=>{
-    if (!window._fbReady) {
+  }
+
+  // Testa conexão com uma leitura simples ao nó raiz de controle
+  get(ref(db, ".info/connected"))
+    .then(() => _fbInit())
+    .catch(err => {
+      console.error("Firebase falhou ao conectar:", err);
       window._fbFailed = true;
       _fbFlushQueue();
-      window.dispatchEvent(new Event("fbtimeout"));
-      console.warn("Firebase não respondeu em 8s — entrando em modo offline.");
+      window.dispatchEvent(new CustomEvent("fbautherror", {detail:err}));
+    });
+
+  // Failsafe: libera em até 5s mesmo sem resposta
+  setTimeout(() => {
+    if (!window._fbReady) {
+      console.warn("Firebase não respondeu em 5s — liberando app.");
+      _fbInit();
     }
-  }, 8000);
+  }, 5000);
 </script>
 
 <style>
