@@ -24,19 +24,34 @@
   window._fbSet = (p,d) => set(ref(db,p),d);
   window._fbGet = (p) => get(ref(db,p));
   window._fbReady = false;
+  window._fbFailed = false;
+  function _fbFlushQueue(){
+    if (window._fbQueue) { window._fbQueue.forEach(fn=>{ try{fn();}catch(e){console.error(e);} }); window._fbQueue=[]; }
+  }
   // Aguarda autenticação anônima antes de liberar leitura/escrita.
   // Necessário para regras do Realtime DB com .read/.write = "auth != null".
   onAuthStateChanged(auth, (user) => {
     if (user && !window._fbReady) {
       window._fbReady = true;
-      if (window._fbQueue) { window._fbQueue.forEach(fn=>fn()); window._fbQueue=[]; }
+      _fbFlushQueue();
       window.dispatchEvent(new Event("fbready"));
     }
   });
   signInAnonymously(auth).catch(err => {
     console.error("Firebase auth (anônimo) falhou:", err);
+    window._fbFailed = true;
+    _fbFlushQueue(); // libera fila — operações vão falhar/retornar null, mas não travam o app
     window.dispatchEvent(new CustomEvent("fbautherror",{detail:err}));
   });
+  // Failsafe: se em 8s o Firebase não estiver pronto, libera o app em modo offline.
+  setTimeout(()=>{
+    if (!window._fbReady) {
+      window._fbFailed = true;
+      _fbFlushQueue();
+      window.dispatchEvent(new Event("fbtimeout"));
+      console.warn("Firebase não respondeu em 8s — entrando em modo offline.");
+    }
+  }, 8000);
 </script>
 
 <style>
@@ -930,8 +945,8 @@ function svCloud(){
   },700);
 }
 function setCS(s){ const d=gel("cloud-dot"),t=gel("cloud-txt"); if(!d)return; d.className="cloud-dot"+(s==="saving"?" saving":s==="error"?" error":""); t.textContent=s==="saving"?"Salvando...":s==="error"?"Erro":"Sincronizado"; }
-function fbGetSafe(p){ return new Promise((res,rej)=>{ if(window._fbReady) window._fbGet(p).then(res).catch(rej); else { window._fbQueue=window._fbQueue||[]; window._fbQueue.push(()=>window._fbGet(p).then(res).catch(rej)); } }); }
-function fbSetSafe(p,d){ return new Promise((res,rej)=>{ if(window._fbReady) window._fbSet(p,d).then(res).catch(rej); else { window._fbQueue=window._fbQueue||[]; window._fbQueue.push(()=>window._fbSet(p,d).then(res).catch(rej)); } }); }
+function fbGetSafe(p){ return new Promise((res,rej)=>{ if(window._fbReady) window._fbGet(p).then(res).catch(rej); else if(window._fbFailed) res({val:()=>null}); else { window._fbQueue=window._fbQueue||[]; window._fbQueue.push(()=> window._fbReady ? window._fbGet(p).then(res).catch(rej) : res({val:()=>null})); } }); }
+function fbSetSafe(p,d){ return new Promise((res,rej)=>{ if(window._fbReady) window._fbSet(p,d).then(res).catch(rej); else if(window._fbFailed) rej(new Error("Firebase offline")); else { window._fbQueue=window._fbQueue||[]; window._fbQueue.push(()=> window._fbReady ? window._fbSet(p,d).then(res).catch(rej) : rej(new Error("Firebase offline"))); } }); }
 function carregarFB(p,cb){ fbGetSafe(p).then(s=>cb(s.val())).catch(()=>cb(null)); }
 
 function traduzErroFB(err){
